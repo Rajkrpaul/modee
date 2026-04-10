@@ -30,7 +30,15 @@ const navItems = [
   { href: "/profile", label: "Profile", icon: BookOpen },
 ]
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+export function DashboardLayout({
+  children,
+  title,
+  subtitle,
+}: {
+  children: React.ReactNode
+  title?: string
+  subtitle?: string
+}) {
   const { user, logout } = useAuth()
   const router = useRouter()
 
