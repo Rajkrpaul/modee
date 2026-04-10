@@ -71,7 +71,9 @@ export interface User {
 
 // ─── File persistence ─────────────────────────────────────────────────────────
 
-const DATA_DIR = path.join(process.cwd(), '.data')
+const DATA_DIR = process.env.VERCEL || process.env.NODE_ENV === 'production' 
+  ? '/tmp/.data' 
+  : path.join(process.cwd(), '.data')
 const USERS_FILE = path.join(DATA_DIR, 'users.json')
 
 function ensureDataDir() {
