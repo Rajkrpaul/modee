@@ -67,7 +67,11 @@ export default function DashboardPage() {
       .slice(0, 2)
   }
 
-  const xpForCurrentLevel = user.xp % 100
+  const userXp = user.xp || 0
+  const userLevel = user.level || 1
+  const userStreak = user.streak || 0
+
+  const xpForCurrentLevel = userXp % 100
   const xpRequired = 100
 
   return (
@@ -130,7 +134,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Total XP</p>
-                    <p className="text-2xl font-bold">{user.xp.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">{userXp.toLocaleString()}</p>
                   </div>
                 </div>
               </CardContent>
@@ -144,7 +148,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Level</p>
-                    <p className="text-2xl font-bold">{user.level}</p>
+                    <p className="text-2xl font-bold">{userLevel}</p>
                   </div>
                 </div>
               </CardContent>
@@ -158,7 +162,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Streak</p>
-                    <p className="text-2xl font-bold">{user.streak} days</p>
+                    <p className="text-2xl font-bold">{userStreak} days</p>
                   </div>
                 </div>
               </CardContent>
@@ -189,14 +193,14 @@ export default function DashboardPage() {
                 Level Progress
               </CardTitle>
               <CardDescription>
-                {xpRequired - xpForCurrentLevel} XP until level {user.level + 1}
+                {xpRequired - xpForCurrentLevel} XP until level {userLevel + 1}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Level {user.level}</span>
-                  <span>Level {user.level + 1}</span>
+                  <span>Level {userLevel}</span>
+                  <span>Level {userLevel + 1}</span>
                 </div>
                 <Progress value={(xpForCurrentLevel / xpRequired) * 100} className="h-3" />
                 <p className="text-xs text-muted-foreground text-center">
