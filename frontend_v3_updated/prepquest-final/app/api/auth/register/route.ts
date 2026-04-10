@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
         lastActiveDate: new Date().toISOString().split('T')[0],
       },
       badges: [],
+      completedChallenges: [],
+      interviewHistory: [],
     })
 
     console.log(`[DEV] User registered & auto-verified: ${email}`)
