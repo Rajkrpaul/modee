@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Raj Kumar Paul",
+    "email": "prabhatnanda32@gmail.com",
+    "password": "aefa616001f6c5e0babbb5fbaeeea459:d2f0ba6276eabe67bdefa6e55bff54725fec0839242e9406d8ce830fc5932861",
+    "isVerified": true,
+    "preferences": {
+      "theme": "dark",
+      "notifications": true,
+      "soundEffects": true,
+      "streakVisibility": true
+    },
+    "gameStats": {
+      "xp": 0,
+      "streak": 0,
+      "longestStreak": 0,
+      "challengesCompleted": 0,
+      "interviewsCompleted": 0,
+      "resumeTasksCompleted": 0,
+      "lastActiveDate": "2026-04-10"
+    },
+    "badges": [],
+    "id": "user_1775799139821_1775799139745",
+    "completedChallenges": [],
+    "interviewHistory": [],
+    "createdAt": "2026-04-10T05:32:19.821Z",
+    "updatedAt": "2026-04-10T05:32:26.411Z"
+  }
+]

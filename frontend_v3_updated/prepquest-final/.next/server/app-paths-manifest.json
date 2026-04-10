@@ -1,0 +1,15 @@
+{
+  "/signup/page": "app/signup/page.js",
+  "/api/auth/me/route": "app/api/auth/me/route.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/api/auth/register/route": "app/api/auth/register/route.js",
+  "/login/page": "app/login/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/api/leaderboard/route": "app/api/leaderboard/route.js",
+  "/challenges/page": "app/challenges/page.js",
+  "/interviews/page": "app/interviews/page.js",
+  "/api/challenges/complete/route": "app/api/challenges/complete/route.js",
+  "/api/interviews/submit/route": "app/api/interviews/submit/route.js",
+  "/leaderboard/page": "app/leaderboard/page.js",
+  "/page": "app/page.js"
+}

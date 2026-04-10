@@ -1,0 +1,354 @@
+{
+  "info": {
+    "name": "Gamified Placement Prep API",
+    "description": "Complete API collection for testing the Gamified AI Placement Preparation Platform backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "taskId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"Secret@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data) {",
+                  "  pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "  pm.collectionVariables.set('userId', res.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@demo.com\",\n  \"password\": \"Student@1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data) {",
+                  "  pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "  pm.collectionVariables.set('userId', res.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@placementprep.com\",\n  \"password\": \"Admin@1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/verify?token=YOUR_TOKEN_HERE"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/refresh",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/logout",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/forgot-password",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@demo.com\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 User",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/user/profile",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/user/update",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Updated\",\n  \"skills\": [\"Python\", \"React\", \"System Design\", \"Node.js\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/user/stats",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Get Activity Log",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/user/activity?page=1&limit=10",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/user/all?page=1&limit=20",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎮 Gamification",
+      "item": [
+        {
+          "name": "Get Leaderboard (Global)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/leaderboard?type=global"
+          }
+        },
+        {
+          "name": "Get Leaderboard (Weekly)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/leaderboard?type=weekly"
+          }
+        },
+        {
+          "name": "Get All Tasks",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tasks",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Get My Tasks",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tasks/my",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Complete a Task",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/tasks/{{taskId}}/complete",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 85\n}"
+            }
+          }
+        },
+        {
+          "name": "Add XP (Admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/xp/add",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"amount\": 100,\n  \"reason\": \"bonus_award\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Task (Admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/tasks",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Graph BFS & DFS\",\n  \"description\": \"Implement BFS and DFS for a graph and solve 3 problems.\",\n  \"category\": \"Data Structures & Algorithms\",\n  \"difficulty\": \"MEDIUM\",\n  \"xpReward\": 25,\n  \"skills\": [\"Graphs\", \"BFS\", \"DFS\", \"Algorithms\"]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Trends",
+      "item": [
+        {
+          "name": "Get Skill Trends",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/trends/skills"
+          }
+        },
+        {
+          "name": "Get Job Trends",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/trends/jobs"
+          }
+        },
+        {
+          "name": "Get Job Trends (filtered)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/trends/jobs?company=Google"
+          }
+        },
+        {
+          "name": "Get User Analytics",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/trends/analytics",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI Agents",
+      "item": [
+        {
+          "name": "Get Task Recommendations",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/agent/recommend",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "Analyze Resume",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/agent/analyze-resume",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumeText\": \"Jane Doe - Software Engineer\\nEmail: jane@example.com\\n\\nSKILLS:\\nPython, JavaScript, React, Node.js, PostgreSQL, Redis, Docker, AWS, System Design, Data Structures & Algorithms\\n\\nEXPERIENCE:\\nSoftware Engineer Intern - TechCorp (June 2023 - Aug 2023)\\n- Built REST APIs using Node.js and Express, serving 10k+ daily requests\\n- Improved database query performance by 35% through indexing\\n- Developed React dashboard reducing report generation time by 50%\\n\\nPROJECTS:\\n1. E-Commerce Platform - Full-stack app using React, Node.js, PostgreSQL\\n   Handles 500+ concurrent users, deployed on AWS EC2\\n2. Chat Application - Real-time messaging with Socket.IO and Redis\\n\\nEDUCATION:\\nB.Tech Computer Science - IIT Delhi (2020-2024) - CGPA: 8.5/10\\n\\nACHIEVEMENTS:\\n- LeetCode: 350+ problems solved, Knight rating\\n- Won 1st place at HackFest 2023\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Trigger Motivation Nudge",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/agent/nudge",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏥 Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    }
+  ]
+}

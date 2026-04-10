@@ -1,0 +1,158 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  password         String
+  verified         Boolean   @default(false)
+  role             Role      @default(STUDENT)
+  xp               Int       @default(0)
+  level            Int       @default(1)
+  streak           Int       @default(0)
+  lastActiveDate   DateTime?
+  skills           String[]
+  completedTasks   String[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  refreshTokens    RefreshToken[]
+  tasks            UserTask[]
+  rewards          UserReward[]
+  activityLogs     ActivityLog[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  type      TokenType
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id          String     @id @default(uuid())
+  title       String
+  description String
+  category    String
+  difficulty  Difficulty @default(MEDIUM)
+  xpReward    Int        @default(10)
+  skills      String[]
+  createdAt   DateTime   @default(now())
+
+  userTasks   UserTask[]
+}
+
+model UserTask {
+  id          String     @id @default(uuid())
+  userId      String
+  taskId      String
+  status      TaskStatus @default(PENDING)
+  score       Float?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task        Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId])
+}
+
+model Reward {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String
+  xpThreshold Int
+  badgeIcon   String?
+  createdAt   DateTime     @default(now())
+
+  userRewards UserReward[]
+}
+
+model UserReward {
+  id        String   @id @default(uuid())
+  userId    String
+  rewardId  String
+  earnedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reward    Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rewardId])
+}
+
+model SkillTrend {
+  id         String   @id @default(uuid())
+  skill      String   @unique
+  demand     Int      @default(0)
+  weeklyDelta Int     @default(0)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+}
+
+model JobTrend {
+  id           String   @id @default(uuid())
+  company      String
+  role         String
+  skills       String[]
+  description  String?
+  postedAt     DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BlacklistedToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  STUDENT
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
