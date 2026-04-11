@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -42,17 +42,24 @@ import {
   Gamepad2,
   ArrowLeft,
   LogOut,
+  Upload,
+  X,
 } from 'lucide-react'
 
 export default function SettingsPage() {
   const { user, isLoading: authLoading, updateUser, changePassword, deleteAccount, logout } = useAuth()
   const { theme, setTheme } = useTheme()
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Profile state
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [isSavingProfile, setIsSavingProfile] = useState(false)
+
+  // Profile picture state
+  const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null)
+  const [isUploadingPic, setIsUploadingPic] = useState(false)
 
   // Password state
   const [currentPassword, setCurrentPassword] = useState('')
@@ -82,8 +89,31 @@ export default function SettingsPage() {
       setNotifications(user.preferences?.notifications ?? true)
       setSoundEffects(user.preferences?.soundEffects ?? true)
       setStreakVisibility(user.preferences?.streakVisibility ?? true)
+      if (user.profilePicture) setProfilePicPreview(user.profilePicture)
     }
   }, [user])
+
+  const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB')
+      return
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64 = reader.result as string
+      setProfilePicPreview(base64)
+    }
+    reader.readAsDataURL(file)
+  }
 
   const handleSaveProfile = async () => {
     if (!name.trim()) {
@@ -92,7 +122,13 @@ export default function SettingsPage() {
     }
 
     setIsSavingProfile(true)
-    const result = await updateUser({ name: name.trim() })
+
+    const updatePayload: any = { name: name.trim() }
+    if (profilePicPreview && profilePicPreview !== user?.profilePicture) {
+      updatePayload.profilePicture = profilePicPreview
+    }
+
+    const result = await updateUser(updatePayload)
     setIsSavingProfile(false)
 
     if (result.success) {
@@ -102,17 +138,20 @@ export default function SettingsPage() {
     }
   }
 
+  const handleRemoveProfilePic = () => {
+    setProfilePicPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error('All password fields are required')
       return
     }
-
     if (newPassword.length < 8) {
       toast.error('New password must be at least 8 characters')
       return
     }
-
     if (newPassword !== confirmPassword) {
       toast.error('New passwords do not match')
       return
@@ -181,12 +220,7 @@ export default function SettingsPage() {
   }
 
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
+    return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
   return (
@@ -207,13 +241,13 @@ export default function SettingsPage() {
               <span className="text-xl font-bold">PrepQuest</span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={handleLogout}>
               <LogOut className="w-5 h-5" />
             </Button>
             <Avatar className="w-10 h-10 border-2 border-primary/30">
-              <AvatarImage src={user.profilePicture} />
+              <AvatarImage src={profilePicPreview || user.profilePicture} />
               <AvatarFallback className="bg-primary/20 text-primary">
                 {getInitials(user.name || user.email)}
               </AvatarFallback>
@@ -229,34 +263,27 @@ export default function SettingsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-4xl mx-auto"
         >
-          {/* Page Title */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <Settings className="w-8 h-8 text-primary" />
               Settings
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Manage your account and preferences
-            </p>
+            <p className="text-muted-foreground mt-1">Manage your account and preferences</p>
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="glass w-full justify-start overflow-x-auto">
               <TabsTrigger value="profile" className="gap-2">
-                <User className="w-4 h-4" />
-                Profile
+                <User className="w-4 h-4" />Profile
               </TabsTrigger>
               <TabsTrigger value="account" className="gap-2">
-                <Shield className="w-4 h-4" />
-                Account
+                <Shield className="w-4 h-4" />Account
               </TabsTrigger>
               <TabsTrigger value="preferences" className="gap-2">
-                <Settings className="w-4 h-4" />
-                Preferences
+                <Settings className="w-4 h-4" />Preferences
               </TabsTrigger>
               <TabsTrigger value="danger" className="gap-2 text-destructive">
-                <Trash2 className="w-4 h-4" />
-                Danger Zone
+                <Trash2 className="w-4 h-4" />Danger Zone
               </TabsTrigger>
             </TabsList>
 
@@ -265,30 +292,61 @@ export default function SettingsPage() {
               <Card className="glass border-border/50">
                 <CardHeader>
                   <CardTitle>Profile Information</CardTitle>
-                  <CardDescription>
-                    Update your personal information and profile picture
-                  </CardDescription>
+                  <CardDescription>Update your personal information and profile picture</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Avatar */}
+                  {/* Avatar Upload */}
                   <div className="flex items-center gap-6">
                     <div className="relative">
                       <Avatar className="w-24 h-24">
-                        <AvatarImage src={user.profilePicture} />
+                        <AvatarImage src={profilePicPreview || undefined} />
                         <AvatarFallback className="text-2xl bg-primary/20">
                           {getInitials(user.name || user.email)}
                         </AvatarFallback>
                       </Avatar>
-                      <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary/80 transition-colors">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary/80 transition-colors"
+                      >
                         <Camera className="w-4 h-4 text-primary-foreground" />
                       </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePicChange}
+                        className="hidden"
+                      />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h3 className="font-semibold">{user.name || 'Anonymous'}</h3>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Level {user.level} | {user.xp} XP
                       </p>
+                      <div className="flex gap-2 mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 text-xs"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Upload className="w-3 h-3" />
+                          Upload Photo
+                        </Button>
+                        {profilePicPreview && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-2 text-xs text-destructive hover:text-destructive"
+                            onClick={handleRemoveProfilePic}
+                          >
+                            <X className="w-3 h-3" />
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">JPG, PNG or GIF · Max 5MB</p>
                     </div>
                   </div>
 
@@ -297,12 +355,7 @@ export default function SettingsPage() {
                     <Label htmlFor="name">Full Name</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="pl-10"
-                      />
+                      <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="pl-10" />
                     </div>
                   </div>
 
@@ -311,28 +364,13 @@ export default function SettingsPage() {
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        value={email}
-                        disabled
-                        className="pl-10 opacity-60"
-                      />
+                      <Input id="email" value={email} disabled className="pl-10 opacity-60" />
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Contact support to change your email address
-                    </p>
+                    <p className="text-xs text-muted-foreground">Contact support to change your email address</p>
                   </div>
 
-                  <Button
-                    onClick={handleSaveProfile}
-                    disabled={isSavingProfile}
-                    className="gap-2"
-                  >
-                    {isSavingProfile ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
+                  <Button onClick={handleSaveProfile} disabled={isSavingProfile} className="gap-2">
+                    {isSavingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Save Changes
                   </Button>
                 </CardContent>
@@ -344,63 +382,32 @@ export default function SettingsPage() {
               <Card className="glass border-border/50">
                 <CardHeader>
                   <CardTitle>Change Password</CardTitle>
-                  <CardDescription>
-                    Update your password to keep your account secure
-                  </CardDescription>
+                  <CardDescription>Update your password to keep your account secure</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="currentPassword">Current Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="currentPassword"
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="pl-10"
-                      />
+                      <Input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="pl-10" />
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="newPassword">New Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="newPassword"
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="pl-10"
-                      />
+                      <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="pl-10" />
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm New Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="pl-10"
-                      />
+                      <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10" />
                     </div>
                   </div>
-
-                  <Button
-                    onClick={handleChangePassword}
-                    disabled={isChangingPassword}
-                    className="gap-2"
-                  >
-                    {isChangingPassword ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Shield className="w-4 h-4" />
-                    )}
+                  <Button onClick={handleChangePassword} disabled={isChangingPassword} className="gap-2">
+                    {isChangingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
                     Change Password
                   </Button>
                 </CardContent>
@@ -410,118 +417,67 @@ export default function SettingsPage() {
             {/* Preferences Tab */}
             <TabsContent value="preferences">
               <div className="space-y-6">
-                {/* Appearance */}
                 <Card className="glass border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Palette className="w-5 h-5" />
-                      Appearance
-                    </CardTitle>
-                    <CardDescription>
-                      Customize how PrepQuest looks
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Palette className="w-5 h-5" />Appearance</CardTitle>
+                    <CardDescription>Customize how PrepQuest looks</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div>
                         <Label>Theme</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Choose your preferred theme
-                        </p>
+                        <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
                       </div>
                       <div className="flex gap-2">
                         {(['light', 'dark', 'system'] as const).map((t) => (
-                          <Button
-                            key={t}
-                            variant={theme === t ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setTheme(t)}
-                            className="capitalize"
-                          >
-                            {t}
-                          </Button>
+                          <Button key={t} variant={theme === t ? 'default' : 'outline'} size="sm" onClick={() => setTheme(t)} className="capitalize">{t}</Button>
                         ))}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Notifications */}
                 <Card className="glass border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Bell className="w-5 h-5" />
-                      Notifications
-                    </CardTitle>
-                    <CardDescription>
-                      Manage your notification preferences
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Bell className="w-5 h-5" />Notifications</CardTitle>
+                    <CardDescription>Manage your notification preferences</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div>
                         <Label>Email Notifications</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Receive updates about challenges and achievements
-                        </p>
+                        <p className="text-sm text-muted-foreground">Receive updates about challenges and achievements</p>
                       </div>
-                      <Switch
-                        checked={notifications}
-                        onCheckedChange={setNotifications}
-                      />
+                      <Switch checked={notifications} onCheckedChange={setNotifications} />
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Gamification */}
                 <Card className="glass border-border/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Gamepad2 className="w-5 h-5" />
-                      Gamification
-                    </CardTitle>
-                    <CardDescription>
-                      Customize your gaming experience
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Gamepad2 className="w-5 h-5" />Gamification</CardTitle>
+                    <CardDescription>Customize your gaming experience</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label className="flex items-center gap-2">
-                          <Volume2 className="w-4 h-4" />
-                          Sound Effects
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          Play sounds for XP gains and achievements
-                        </p>
+                        <Label className="flex items-center gap-2"><Volume2 className="w-4 h-4" />Sound Effects</Label>
+                        <p className="text-sm text-muted-foreground">Play sounds for XP gains and achievements</p>
                       </div>
-                      <Switch
-                        checked={soundEffects}
-                        onCheckedChange={setSoundEffects}
-                      />
+                      <Switch checked={soundEffects} onCheckedChange={setSoundEffects} />
                     </div>
-
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label className="flex items-center gap-2">
-                          <Eye className="w-4 h-4" />
-                          Streak Visibility
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          Show your streak on your public profile
-                        </p>
+                        <Label className="flex items-center gap-2"><Eye className="w-4 h-4" />Streak Visibility</Label>
+                        <p className="text-sm text-muted-foreground">Show your streak on your public profile</p>
                       </div>
-                      <Switch
-                        checked={streakVisibility}
-                        onCheckedChange={setStreakVisibility}
-                      />
+                      <Switch checked={streakVisibility} onCheckedChange={setStreakVisibility} />
                     </div>
                   </CardContent>
                 </Card>
 
                 <Button onClick={handleSavePreferences} className="gap-2">
-                  <Save className="w-4 h-4" />
-                  Save Preferences
+                  <Save className="w-4 h-4" />Save Preferences
                 </Button>
               </div>
             </TabsContent>
@@ -531,51 +487,34 @@ export default function SettingsPage() {
               <Card className="glass border-destructive/30 bg-destructive/5">
                 <CardHeader>
                   <CardTitle className="text-destructive">Delete Account</CardTitle>
-                  <CardDescription>
-                    Permanently delete your account and all associated data. This action cannot be undone.
-                  </CardDescription>
+                  <CardDescription>Permanently delete your account and all associated data. This action cannot be undone.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" className="gap-2">
-                        <Trash2 className="w-4 h-4" />
-                        Delete Account
+                        <Trash2 className="w-4 h-4" />Delete Account
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete your
-                          account, all your progress, XP, badges, and remove your data from
-                          our servers.
+                          This action cannot be undone. This will permanently delete your account, all your progress, XP, badges, and remove your data from our servers.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <div className="space-y-2 py-4">
                         <Label htmlFor="deletePassword">Enter your password to confirm</Label>
-                        <Input
-                          id="deletePassword"
-                          type="password"
-                          value={deletePassword}
-                          onChange={(e) => setDeletePassword(e.target.value)}
-                          placeholder="Your password"
-                        />
+                        <Input id="deletePassword" type="password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} placeholder="Your password" />
                       </div>
                       <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setDeletePassword('')}>
-                          Cancel
-                        </AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setDeletePassword('')}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={handleDeleteAccount}
                           disabled={isDeleting || !deletePassword}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                          {isDeleting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            'Delete Account'
-                          )}
+                          {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete Account'}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -583,8 +522,7 @@ export default function SettingsPage() {
 
                   <div className="mt-6 pt-6 border-t border-border">
                     <Button variant="outline" onClick={handleLogout} className="gap-2">
-                      <LogOut className="w-4 h-4" />
-                      Log Out
+                      <LogOut className="w-4 h-4" />Log Out
                     </Button>
                   </div>
                 </CardContent>
