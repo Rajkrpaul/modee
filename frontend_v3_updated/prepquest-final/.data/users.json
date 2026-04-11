@@ -12,18 +12,73 @@
     },
     "gameStats": {
       "xp": 0,
-      "streak": 0,
-      "longestStreak": 0,
+      "streak": 1,
+      "longestStreak": 1,
       "challengesCompleted": 0,
       "interviewsCompleted": 0,
       "resumeTasksCompleted": 0,
-      "lastActiveDate": "2026-04-10"
+      "lastActiveDate": "2026-04-11"
     },
     "badges": [],
     "id": "user_1775799139821_1775799139745",
     "completedChallenges": [],
     "interviewHistory": [],
     "createdAt": "2026-04-10T05:32:19.821Z",
-    "updatedAt": "2026-04-10T05:32:26.411Z"
+    "updatedAt": "2026-04-11T15:36:06.828Z"
+  },
+  {
+    "name": "Raj Kumar Paul",
+    "email": "raj02112005@gmail.com",
+    "password": "965e8b345f2ac498c0b3fb88c860d6b4:fba9b139fee92d9b6d9f627ba3d65b5ab43eea4e8b5168a98d818df8169072f8",
+    "isVerified": true,
+    "preferences": {
+      "theme": "dark",
+      "notifications": true,
+      "soundEffects": true,
+      "streakVisibility": true
+    },
+    "gameStats": {
+      "xp": 78,
+      "streak": 0,
+      "longestStreak": 0,
+      "challengesCompleted": 0,
+      "interviewsCompleted": 3,
+      "resumeTasksCompleted": 0,
+      "lastActiveDate": "2026-04-11"
+    },
+    "badges": [],
+    "completedChallenges": [],
+    "interviewHistory": [
+      {
+        "sessionId": "isess_1775926002685",
+        "role": "behavioral",
+        "difficulty": "easy",
+        "score": 35,
+        "earnedXp": 13,
+        "questionsAnswered": 1,
+        "completedAt": "2026-04-11T16:46:42.685Z"
+      },
+      {
+        "sessionId": "isess_1775926043011",
+        "role": "behavioral",
+        "difficulty": "easy",
+        "score": 35,
+        "earnedXp": 13,
+        "questionsAnswered": 1,
+        "completedAt": "2026-04-11T16:47:23.011Z"
+      },
+      {
+        "sessionId": "isess_1775926741598",
+        "role": "behavioral",
+        "difficulty": "easy",
+        "score": 10,
+        "earnedXp": 13,
+        "questionsAnswered": 1,
+        "completedAt": "2026-04-11T16:59:01.598Z"
+      }
+    ],
+    "id": "user_1775921787431_1775921787367",
+    "createdAt": "2026-04-11T15:36:27.431Z",
+    "updatedAt": "2026-04-11T16:59:02.606Z"
   }
 ]

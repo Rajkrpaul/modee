@@ -55,7 +55,6 @@ export default function AIMentorPage() {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -64,12 +63,6 @@ export default function AIMentorPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-  }, [])
 
   const handleSend = async (content?: string) => {
     if (isLoading) return
@@ -84,41 +77,63 @@ export default function AIMentorPage() {
       timestamp: new Date(),
     }
 
-    setMessages((prev) => [...prev, userMessage])
+    const updatedMessages = [...messages, userMessage]
+    setMessages(updatedMessages)
     setInput("")
     setIsLoading(true)
 
-    timeoutRef.current = setTimeout(() => {
-      const lower = messageContent.toLowerCase()
+    try {
+      const response = await fetch("/api/ai-mentor", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: updatedMessages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      })
 
-      let response = {
-        content: "I can help with that! What exactly do you want to explore?",
-        suggestions: ["Explain DP", "Mock interview"],
+      if (!response.ok) {
+        throw new Error(`Grok API error: ${response.status}`)
       }
 
-      if (lower.includes("dp")) {
-        response = {
-          content: "Dynamic Programming is about solving subproblems and storing results.",
-          suggestions: ["Knapsack", "LCS", "DP roadmap"],
-        }
-      } else if (lower.includes("interview")) {
-        response = {
-          content: "Let's prepare for interviews 💼 Start with DSA + mock rounds.",
-          suggestions: ["Mock interview", "System design"],
+      const data = await response.json()
+      const rawContent: string = data.choices?.[0]?.message?.content ?? "Sorry, I couldn't get a response."
+
+      // Parse out suggestions if present
+      let botContent = rawContent
+      let suggestions: string[] = []
+
+      const suggMatch = rawContent.match(/SUGGESTIONS:\[([^\]]+)\]/)
+      if (suggMatch) {
+        botContent = rawContent.replace(/SUGGESTIONS:\[[^\]]+\]/, "").trim()
+        try {
+          suggestions = JSON.parse(`[${suggMatch[1]}]`)
+        } catch {
+          suggestions = []
         }
       }
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: response.content,
+        content: botContent,
         timestamp: new Date(),
-        suggestions: response.suggestions,
+        suggestions: suggestions.length > 0 ? suggestions : undefined,
       }
 
       setMessages((prev) => [...prev, botMessage])
+    } catch (error) {
+      const errMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "⚠️ Failed to reach the AI. Please check your API key or network connection.",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, errMessage])
+    } finally {
       setIsLoading(false)
-    }, 1200)
+    }
   }
 
   return (
@@ -154,7 +169,7 @@ export default function AIMentorPage() {
                 )}
 
                 <div className="max-w-[70%]">
-                  <div className={`p-3 rounded-lg ${msg.role === "user" ? "bg-blue-500 text-white" : "bg-gray-100"}`}>
+                  <div className={`p-3 rounded-lg ${msg.role === "user" ? "bg-blue-500 text-white" : "bg-white/10 text-white"}`}>
                     {msg.content}
                   </div>
 

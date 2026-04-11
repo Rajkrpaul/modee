@@ -2,45 +2,23 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
 
-/**
- * POST /api/interviews/evaluate
- * Body: {
- *   question: string,
- *   answer: string,
- *   keyPoints: string[],
- *   category: string,
- *   difficulty: string
- * }
- *
- * Uses the Anthropic API (Claude) to evaluate the user's interview answer
- * and return structured feedback.
- *
- * Response:
- * {
- *   score: number,           // 0-100
- *   strengths: string[],
- *   improvements: string[],
- *   keyPointsCovered: string[],
- *   summary: string
- * }
- */
+const GROQ_API_KEY = process.env.GROQ_API_KEY || ""
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { question, answer, keyPoints = [], category = '', difficulty = 'medium' } = body
 
     if (!question || !answer) {
-      return NextResponse.json(
-        { message: 'question and answer are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ message: 'question and answer are required' }, { status: 400 })
     }
 
     if (answer.trim().length < 10) {
-      return NextResponse.json(
-        { message: 'Answer is too short to evaluate' },
-        { status: 400 }
-      )
+      return NextResponse.json({ message: 'Answer is too short to evaluate' }, { status: 400 })
+    }
+
+    if (!GROQ_API_KEY) {
+      return NextResponse.json({ message: 'GROQ_API_KEY is not set' }, { status: 500 })
     }
 
     const prompt = `You are an expert technical interviewer evaluating a candidate's answer to an interview question.
@@ -70,27 +48,28 @@ Scoring guide:
 - 40-59: Fair, some relevant content but missing important points
 - 0-39: Needs significant improvement`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
+        Authorization: `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 600,
+        model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
+        max_tokens: 600,
+        temperature: 0.3,
       }),
     })
 
+    const data = await response.json()
+
     if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status}`)
+      console.error('Groq API error:', data)
+      throw new Error(`Groq API error: ${response.status}`)
     }
 
-    const data = await response.json()
-    const rawText = data.content?.map((b: { type: string; text?: string }) => b.text || '').join('') ?? ''
-
-    // Parse the JSON from Claude's response
+    const rawText = data.choices?.[0]?.message?.content ?? ''
     const jsonMatch = rawText.match(/\{[\s\S]*\}/)
     if (!jsonMatch) throw new Error('Failed to parse AI response')
 
@@ -103,14 +82,13 @@ Scoring guide:
       keyPointsCovered: Array.isArray(evaluation.keyPointsCovered) ? evaluation.keyPointsCovered : [],
       summary: evaluation.summary || '',
     })
+
   } catch (error) {
     console.error('[/api/interviews/evaluate] error:', error)
 
-    // Graceful fallback: simulate evaluation if AI is unavailable
     const body = await request.json().catch(() => ({}))
     const answer = body.answer ?? ''
     const keyPoints: string[] = body.keyPoints ?? []
-
     const covered = keyPoints.filter((kp: string) =>
       answer.toLowerCase().includes(kp.toLowerCase().split(' ')[0])
     )

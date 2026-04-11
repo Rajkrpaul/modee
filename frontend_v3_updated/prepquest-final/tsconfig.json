@@ -23,5 +23,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "next.config.js"],
-  "exclude": ["node_modules", "server.js", "app.js", "config/**/*", "controllers/**/*", "middleware/**/*", "routes/**/*", "services/**/*", "utils/**/*", "agents/**/*", "jobs/**/*", "sockets/**/*", "prisma/seed.js"]
+  "exclude": ["node_modules", "server.js", "app.js", "config/**/*", "controllers/**/*", "middleware/**/*"]
 }
