@@ -9,13 +9,13 @@ import { Button } from '@/components/ui/button'
 import {
   ArrowLeft, Play, RotateCcw, Clock, Zap, Lightbulb,
   CheckCircle2, XCircle, ChevronDown, ChevronUp, Code2,
-  Send, Eye, EyeOff, Lock,
+  Send, Eye, EyeOff, Lock, Brain,
 } from 'lucide-react'
 import Link from 'next/link'
 
 function ChallengeDetailContent() {
   const params = useParams()
-  const { addXp, completeChallenge, completeMission, addNotification, completedChallengeIds } = useGame()
+  const { addXp, completeChallenge, completeMission, addNotification, completedChallengeIds, recordAttempt, pingActivity, adaptive } = useGame()
 
   const challenge = challenges.find(c => c.id === params.id)
   const alreadyCompleted = challenge ? completedChallengeIds.has(challenge.id) : false
@@ -113,6 +113,7 @@ function ChallengeDetailContent() {
       if (!allPassed) {
         const passCount = results.filter(r => r.passed).length
         setOutput({ type: 'error', message: `Only ${passCount}/${results.length} test cases passed. Fix your solution and try again.` })
+        recordAttempt(false, timeElapsed * 1000, challenge.difficulty)
         return
       }
 
@@ -129,6 +130,8 @@ function ChallengeDetailContent() {
       })
 
       await completeChallenge(challenge.id, totalXp, language)
+      recordAttempt(true, timeElapsed * 1000, challenge.difficulty)
+      pingActivity()
       completeMission('daily-coding')
       addNotification(`Challenge "${challenge.title}" completed! +${totalXp} XP`, 'success')
     }, 1800)
@@ -159,8 +162,27 @@ function ChallengeDetailContent() {
 
   const config = difficultyConfig[challenge.difficulty]
 
+  // Adaptive recommendation banner
+  const showAdaptiveBanner = adaptive.efficiencyScore >= 75 && challenge.difficulty === 'easy'
+    || adaptive.efficiencyScore < 35 && challenge.difficulty === 'hard'
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Adaptive Engine Banner */}
+      {showAdaptiveBanner && (
+        <div className={cn(
+          "px-4 py-2 text-xs font-medium flex items-center gap-2 border-b",
+          adaptive.efficiencyScore >= 75
+            ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-500"
+            : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+        )}>
+          <Brain className="w-3.5 h-3.5 shrink-0" />
+          {adaptive.efficiencyScore >= 75
+            ? `🧠 Adaptive Engine: You're crushing easy problems! We recommend moving to ${adaptive.recommendedDifficulty} difficulty for ${adaptive.xpMultiplier}x XP.`
+            : `💡 Adaptive Engine: This looks tough. Try a medium problem first to build confidence.`
+          }
+        </div>
+      )}
       {/* Header */}
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
